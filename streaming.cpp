@@ -39,13 +39,18 @@ void handleStream(streambuf* stream_buffer)
 
     while (iit!=eos) {
         ostringstream oss;
-        while (*iit != '\n') {
+        while ( !(*iit == '\n' || iit == eos) ) {
             oss << *iit++;
         }
-        
-        //print the tick 
+
+        //connection closed before tick completed
+        if (iit == eos) {
+            break;
+        }
+
+        //print the tick
         cout << oss.str() << endl;
-        
+
         *iit++;
     }
 }
@@ -53,11 +58,13 @@ void handleStream(streambuf* stream_buffer)
 int main ()
 {
     try {
-        const Context::Ptr context = new Context(Context::CLIENT_USE, "", "", "", Context::VERIFY_NONE, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+        // example code - do not verify SSL credentials. Production clients MUST
+        // verify the SSL certificate chain to ensure rates are authentic
+        const Context::Ptr context = new Context(Context::TLSV1_CLIENT_USE, "", "", "", Context::VERIFY_NONE, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
 
         // prepare session
         URI uri(domain + std::string("/v1/prices?accountId=") + account_id + std::string("&instruments=") + instruments);
-            
+
         HTTPSClientSession session(uri.getHost(), uri.getPort(), context);
         session.setKeepAlive(true);
 
